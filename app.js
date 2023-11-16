@@ -8,27 +8,23 @@ const bodyParser = require('body-parser');
 require('dotenv').config();
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const model = "whisper-1";
-const ytdl = require("@distube/ytdl-core");
+const cors = require('cors');
+const ytdl = require('ytdl-core');
 
 // Use bodyParser middleware to parse JSON in the request body
 app.use(bodyParser.json());
-
+app.use(cors());
 // Function to download a YouTube video using ytdl-core
 const downloadYouTubeVideo = (url, callback) => {
-  const downloadsDir = path.join(__dirname, 'downloads');
-  const filePath = path.join(downloadsDir, 'video.mp3');
+  const videoStream = ytdl(url, { quality: 'highestaudio' });
 
-  // Clean up the 'downloads' directory before downloading a new video
-  if (fs.existsSync(downloadsDir)) {
-    fs.readdirSync(downloadsDir).forEach((file) => {
-      const currentFilePath = path.join(downloadsDir, file);
-      fs.unlinkSync(currentFilePath);
-    });
-  } else {
-    fs.mkdirSync(downloadsDir, { recursive: true });
+  const filePath = path.join(__dirname, 'downloads', 'video.mp3');
+
+  // Create the 'downloads' directory if it doesn't exist
+  if (!fs.existsSync(path.dirname(filePath))) {
+    fs.mkdirSync(path.dirname(filePath), { recursive: true });
   }
 
-  const videoStream = ytdl(url, { quality: 'highestaudio' });
   const fileStream = fs.createWriteStream(filePath);
 
   videoStream.on('error', (error) => {
@@ -67,16 +63,6 @@ app.post('/transcribe', (req, res) => {
       .then((response) => {
         const transcriptionData = response.data;
         console.log(transcriptionData) // Get the data from the response
-
-        // Delete the MP3 file in 'downloads' after processing the request
-        fs.unlink(filePath, (err) => {
-          if (err) {
-            console.error(`Error deleting file: ${err.message}`);
-          } else {
-            console.log(`File deleted: ${filePath}`);
-          }
-        });
-
         res.json(transcriptionData);
       })
       .catch((err) => {
