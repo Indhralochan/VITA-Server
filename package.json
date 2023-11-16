@@ -10,8 +10,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@ffmpeg-installer/ffmpeg": "^1.0.0", 
-    "@ffmpeg/ffmpeg": "^0.10.1", 
+    "@distube/ytdl-core": "^4.13.3",
+    "@ffmpeg-installer/ffmpeg": "^1.0.0",
+    "@ffmpeg/ffmpeg": "^0.10.1",
     "@ffmpeg/util": "0.12.1",
     "axios": "^1.5.1",
     "body-parser": "^1.20.2",
