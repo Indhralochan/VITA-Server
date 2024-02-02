@@ -1,4 +1,7 @@
 # Logs
+uploads
+downloads
+
 logs
 *.log
 npm-debug.log*
