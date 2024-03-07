@@ -10,10 +10,12 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@axflow/models": "^0.0.25",
     "@distube/ytdl-core": "^4.13.3",
     "@ffmpeg-installer/ffmpeg": "^1.0.0",
     "@ffmpeg/ffmpeg": "^0.10.1",
     "@ffmpeg/util": "0.12.1",
+    "axgen": "^0.0.23",
     "axios": "^1.6.7",
     "body-parser": "^1.20.2",
     "cors": "^2.8.5",

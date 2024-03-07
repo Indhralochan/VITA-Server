@@ -3,6 +3,7 @@ const app = express();
 const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
+const { OpenAIChat } = require('@axflow/models/openai/chat');
 const FormData = require('form-data');
 const bodyParser = require('body-parser');
 const OpenAI = require ("openai");
@@ -56,35 +57,36 @@ const downloadYouTubeVideo = (url, callback) => {
   });
 };
 
-// app.post('/transcribe', (req, res) => {
-//   const youtubeUrl = req.body.youtubeUrl;
-//   if (!youtubeUrl) {
-//     return res.status(400).json({ error: 'Missing youtubeUrl in the request body' });
-//   }
-//   downloadYouTubeVideo(youtubeUrl, (filePath) => {
-//     if (!filePath) {
-//       return res.status(500).json({ error: 'Failed to download the YouTube video' });
-//     }
-//     const formData = new FormData();
-//     formData.append("model", model);
-//     formData.append("file", fs.createReadStream(filePath));
-//     axios.post("https://api.openai.com/v1/audio/transcriptions", formData, {
-//       headers: {
-//         "Authorization": `Bearer ${OPENAI_API_KEY}`,
-//         ...formData.getHeaders(),
-//       },
-//     })
-//       .then((response) => {
-//         const transcriptionData = response.data;
-//         console.log(transcriptionData); // Get the data from the response
-//         res.json(transcriptionData);
-//       })
-//       .catch((err) => {
-//         console.error(err);
-//         res.status(500).json({ error: 'Failed to transcribe audio' });
-//       });
-//   });
-// });
+
+app.post('/transcribe', (req, res) => {
+  const youtubeUrl = req.body.youtubeUrl;
+  if (!youtubeUrl) {
+    return res.status(400).json({ error: 'Missing youtubeUrl in the request body' });
+  }
+  downloadYouTubeVideo(youtubeUrl, (filePath) => {
+    if (!filePath) {
+      return res.status(500).json({ error: 'Failed to download the YouTube video' });
+    }
+    const formData = new FormData();
+    formData.append("model", model);
+    formData.append("file", fs.createReadStream(filePath));
+    axios.post("https://api.openai.com/v1/audio/transcriptions", formData, {
+      headers: {
+        "Authorization": `Bearer ${OPENAI_API_KEY}`,
+        ...formData.getHeaders(),
+      },
+    })
+      .then((response) => {
+        const transcriptionData = response.data;
+        console.log(transcriptionData); // Get the data from the response
+        res.json(transcriptionData);
+      })
+      .catch((err) => {
+        console.error(err);
+        res.status(500).json({ error: 'Failed to transcribe audio' });
+      });
+  });
+});
 const transcribeAudio = (url) => {
   return new Promise((resolve, reject) => {
     const youtubeUrl = url;
@@ -117,9 +119,9 @@ const transcribeAudio = (url) => {
   });
 };
 
-app.get('/', (req, res) => {
-  res.send('Hello World!');
-});
+// app.get('/', (req, res) => {
+//   res.send('Hello World!');
+// });
 
 app.post('/upload', (req, res) => {
   if (!req.files || !req.files.file) {
@@ -182,5 +184,76 @@ app.post('/summarize', async (req, res) => {
       res.status(500).send("Internal Server Error");
   }
 });
+
+// function getLastUserMessageContent(messages) {
+//   for (let i = messages.length - 1; i >= 0; i--) {
+//     if (messages[i].role === "user") {
+//       return messages[i].content;
+//     }
+//   }
+//   return null;
+// }
+
+
+// app.post('/chat', async (req, res) => {
+//   const { messages , context , url } = req.body;
+//   console.log('messages', messages);
+//   console.log('context', context);
+//   console.log('url', url);
+// //   const embedder = new OpenAIEmbedder({ apiKey: process.env.OPENAI_API_KEY });
+// //   const pinecone = new Pinecone({
+// //     index: 'vite',
+// //     namespace: 'default',
+// //     environment: 'gcp-starter',
+// //     apiKey: process.env.PINECONE_API_KEY,
+// //   });
+// //   const allMessagesContent = messages.map(msg => msg.content).join(' ');
+// //   const combinedContext = `${text} ${allMessagesContent}`;
+// //   const template = `Context information is below.
+// // ---------------------
+// // ${combinedContext}
+// // ---------------------
+// // Given the context information and not prior knowledge, answer the question: {query}
+// // `;
+// let query = getLastUserMessageContent(messages);
+//   let combinedContext = messages+context ;
+//   const template = `Context information is below.
+//   ---------------------
+//   ${combinedContext}
+//   ---------------------
+//   Given the context information and not prior knowledge, answer the question: ${query}
+//   `;
+//   const stream = await OpenAIChat.streamTokens(
+//     {
+//       model: 'gpt-3.5-turbo',
+//       messages: [{ role: 'user', content: template}],
+//     },
+//     {
+//       apiKey: process.env.OPENAI_API_KEY,
+//     }
+//   );
+//   return new StreamingJsonResponse(stream);
+
+// // const rag = new RAG({
+// //   embedder: embedder,
+// //   model: new OpenAICompletion({
+// //     model: 'gpt-3.5-turbo-instruct',
+// //     max_tokens: 256,
+// //     apiKey: process.env.OPENAI_API_KEY,
+// //   }),
+// //   prompt: new PromptWithContext({ template }),
+// //   retriever: new Retriever({ store: pinecone, topK: 3 }),
+// // });
+// // const query = getLastUserMessageContent(messages);
+// // const { result, info } = rag.stream(
+// //   query,
+// // );
+// // let val='';
+// // for await (const chunk of result) {
+// //   val+=chunk;
+// // }
+// // console.log(val)
+// // return val;
+// });
 
 module.exports = app;
