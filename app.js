@@ -10,8 +10,10 @@ const OpenAI = require ("openai");
 require('dotenv').config();
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const model = "whisper-1";
+const { execSync } = require('child_process');
 const cors = require('cors');
 const ytdl = require('ytdl-core');
+const base64 = require('base64-js');
 const fileUpload = require('express-fileupload');
 // Use bodyParser middleware to parse JSON in the request body
 app.use(bodyParser.json());
@@ -255,5 +257,146 @@ app.post('/summarize', async (req, res) => {
 // // console.log(val)
 // // return val;
 // });
+
+// const generateImg = async (tikzCode) => {
+//   const filename = `temp_${Date.now()}.tex`;
+
+//   fs.writeFileSync(filename, tikzCode);
+
+//   try {
+//     execSync(`pdflatex -halt-on-error ${filename}`);
+
+//     // Using pdfimages to convert PDF to images
+//     execSync(`pdfimages -svg ${filename.replace('.tex', '.pdf')} ${filename.replace('.tex', '')}`);
+
+//     const svg = fs.readFileSync(filename.replace('.tex', '-000.svg'), 'utf-8');
+//     return svg;
+//   } catch (error) {
+//     console.error('Error rendering TikZ:', error.message);
+//     res.status(500).send({ error: 'Error rendering TikZ diagram.' });
+//   } finally {
+//     fs.unlinkSync(filename);
+//     fs.unlinkSync(filename.replace('.tex', '.pdf'));
+//     // Remove all generated image files by pdfimages
+//     fs.readdirSync('.').forEach(file => {
+//       if (file.startsWith(filename.replace('.tex', ''))) {
+//         fs.unlinkSync(file);
+//       }
+//     });
+//   }
+// };
+
+// app.post('/answergenerate',async(req,res)=>{
+//   const {context , query , marks , format} = req.body;
+//   let content=''
+//   let imagesdata =''
+//   let answer = "";
+//   try { 
+//         const response = await openai.chat.completions.create({
+//             model: "gpt-3.5-turbo",
+//             messages: [{ role: "user", content: `You are a writing assistant which takes the inputs such as question= question on which we you need to generate an answer , context= context from which some relevant information for generating the answer can be found. format=format of the answer can be para or points marks= lenght of the answer depending upon the marks 15 marks = nearly 500 words 10 marks = 400 words 5 marks = 150-200 words 3 marks = 100 words 2 marks = 50 words.general format you need to maintain is that we have headings , subheading may it be with para of points based on the input format.
+//             output: generate an answer based on the input and also generate instructions for generting flow chart on relevant information of the question and answer seperate the flow chart  information with flowchartImageContent word. and strictly do not generate any content other than the answer and the flowchartImageContent . if context is present try checking if its context is universal fact. it its false use the correct fact for answer generation.
+//             context=${context} , question=${query} , marks=${marks} , format = ${format}
+//             ` }],
+//         });
+//         answer = response.choices[0].message.content;
+//         console.log('answer', answer);
+//         answer,imagesdata = answer.split('flowchartImageContent')
+// } catch (error) {
+//     console.error("Error:", error);
+//     res.status(500).send("Internal Server Error");
+// }
+// let image=''
+// try{
+//  image = await openai.images.generate({ model: "dall-e-3", prompt: `flow chart of ${imagesdata}`,response_format: "url"
+// });
+// }
+// catch(err){
+//   console.log(err);
+// }
+// res.status(200).json({ "answer":answer , "imagesUrls":image });
+
+// try { 
+//   let tags = "";
+//       const response = await openai.chat.completions.create({
+//           model: "gpt-3.5-turbo",
+//           messages: [{ role: "user", content: `you are a master latex code writer.generate a flow chart with shapes that illustrates the following data in a flowchart format input = ${imagesdata} . output = only generte latex code for the input and strictly no other content and adhere to proper formatting.
+//           ` }],
+//       });
+//       tags = response.choices[0].message.content;
+//       console.log('tags', tags);
+//       content= tags
+//       const svgImg = await generateImg(content);
+//       // const encodedLatex = base64.fromByteArray(Buffer.from(content, 'utf8'));
+//       res.status(200).json({ "answer":answer , "imagesUrls":svgImg });
+// } catch (error) {
+//   console.error("Error:", error);
+// }
+
+// })
+// async function searchImage(query) {
+//   const endpoint = 'https://api.unsplash.com/search/photos';
+
+//   const accessKey = process.env.UNSPLASH_API_KEY;
+
+//   const params = new URLSearchParams({
+//       query: query,
+//       per_page: '1',
+//       orientation: 'squarish',
+//       client_id: accessKey,
+//   });
+
+//   try {
+//       const response = await fetch(`${endpoint}?${params}`);
+
+//       if (response.ok) {
+//           const data = await response.json();
+//           const imageUrl = data.results[0].urls.regular;
+//           return imageUrl;
+//       }
+//   } catch (error) {
+//       console.error('Error occurred:', error);
+//       return 'image not found';
+//   }
+// }
+
+app.post('/answergenerate', async (req, res) => {
+  const { context, query, marks, format } = req.body;
+  let answer = "";
+  let answerdata = "";
+  let imagesdata = "";
+  try {
+      const response = await openai.chat.completions.create({
+          model: "gpt-3.5-turbo",
+          messages: [{ role: "user", content: `You are a writing assistant which takes the inputs such as question= question on which we you need to generate an answer , context= context from which some relevant information for generating the answer can be found. format=format of the answer can be para or points marks= lenght of the answer depending upon the marks 15 marks = nearly 500 words 10 marks = 400 words 5 marks = 150-200 words 3 marks = 100 words 2 marks = 50 words.general format you need to maintain is that we have headings , subheading may it be with para of points based on the input format.
+            output: generate an answer based on the input and also generate instructions for generting flow chart on relevant information of the question and answer seperate the flow chart  information with flowchartImageContent word. and strictly do not generate any content other than the answer and the flowchartImageContent . if context is present try checking if its context is universal fact. it its false use the correct fact for answer generation.
+            context=${context} , question=${query} , marks=${marks} , format = ${format}
+            ` }],
+      });
+      answer = response.choices[0].message.content;
+      console.log('answer', answer);
+      answer,imagesdata = answer.split('flowchartImageContent')
+      const responseanother = await openai.chat.completions.create({
+        model: "gpt-3.5-turbo",
+        messages: [{
+            role: "user",
+            content: ```you are a master at Mermaid
+            Diagramming and charting tool i want you to generate beautiful and useful mermaid flowcharts code based on the given input ${imagesdata} and strictly do not generate any other content and donnot give any title like mermaid etc only generate the code and format it accordingly with \n for new lines and so on.`
+        }],
+    });
+    answerdata = responseanother.choices[0].message.content;
+  //     imageUrls = await openai.images.generate({
+  //         model: "dall-e-3",
+  //         prompt: `flow chart of ${answerdata} the text is to be included in the images.`,
+  //         response_format: "url"
+  //     });
+
+  } catch (error) {
+      console.error("Error:", error);
+      return res.status(500).send("Internal Server Error");
+  }
+
+  res.status(200).json({ "answer": answer, "imagesUrls": answerdata });
+});
 
 module.exports = app;
